@@ -1,0 +1,6 @@
+#vscode
+.vscode/
+
+#cs
+[Oo]bj/
+[Bb]in/
