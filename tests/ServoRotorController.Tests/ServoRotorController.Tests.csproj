@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ServoController\ServoController.csproj" />
+    <ProjectReference Include="..\..\src\ServoRotorController\ServoRotorController.csproj" />
   </ItemGroup>
 
 </Project>

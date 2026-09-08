@@ -3,18 +3,9 @@ using System;
 // Space Engineers API references
 using Sandbox.ModAPI.Ingame;
 using VRage.Game.ModAPI.Ingame.Utilities;
-using SpaceEngineers.Game.ModAPI.Ingame;
-using VRage.Game.ModAPI.Ingame;
-using VRage.Game.GUI.TextPanel;
 using VRageMath;
-using VRage.Collections;
-using VRage.Network;
-using VRage.Utils;
-using VRage.Audio;
-using System.Xml.Schema;
-using Sandbox.ModAPI.Interfaces;
 
-namespace SE_Scripts.ServoController
+namespace SE_Scripts.ServoRotorController
 {
     public class Program : MyGridProgram
     {
@@ -181,7 +172,7 @@ namespace SE_Scripts.ServoController
                 if(targetAngle  < 0f || targetAngle  >= 360f) throw new ArgumentException("targetAngle must be in [0, 360)");
                 
                 // 1. Calculate the raw distance as if there is no 0/360 boundary
-                float diff =  currentAngle - targetAngle; 
+                float diff =  targetAngle - currentAngle; 
 
                 // 2. Calculate the distance if we cross the boundary
                 float wrappedDiff = diff > 0 ? diff - 360f : diff + 360f; 

@@ -1,5 +1,5 @@
 
-namespace SE_Scripts.ServoController.Tests;
+namespace SE_Scripts.ServoRotorController.Tests;
 
 public class RASCFunctionTests
 {

@@ -1,8 +1,9 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/ServoController/ServoController.csproj" />
+    <Project Path="src/ServoHingeController/ServoHingeController.csproj" />
+    <Project Path="src/ServoRotorController/ServoRotorController.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/ServoController.Tests/ServoController.Tests.csproj" />
+    <Project Path="tests/ServoRotorController.Tests/ServoRotorController.Tests.csproj" />
   </Folder>
 </Solution>
