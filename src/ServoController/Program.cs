@@ -21,6 +21,8 @@ namespace SE_Scripts.ServoController
         private IMyMotorStator motor;
         private float angleTolerance;
 
+        private float initialAngle = float.NaN;
+
         private ISpeedFunction speedFunction; //calculates speed as a function of distance
 
         public interface ISpeedFunction
@@ -106,7 +108,7 @@ namespace SE_Scripts.ServoController
 
         public Program()
         {
-            //Runtime.UpdateFrequency = UpdateFrequency.Update100;
+            float.TryParse(Storage, out initialAngle);
         }
 
         private MyIni parseINI(string customData)
@@ -197,41 +199,47 @@ namespace SE_Scripts.ServoController
         
         public void Main(string argument, UpdateType updateSource)
         {
+            Runtime.UpdateFrequency = UpdateFrequency.Update10;
             try
             {
                 MyIni INI = parseINI(Me.CustomData);
                 loadINI(INI);
+                if(float.IsNaN(initialAngle))
+                {
+                    initialAngle = MathHelper.ToDegrees(motor.Angle); 
+                }
                 float targetAngle = parseArgument(Me.TerminalRunArgument);
-                float distance = getDistance(MathHelper.ToDegrees(motor.Angle), targetAngle, motor.LowerLimitDeg, motor.UpperLimitDeg);
-                float speed = speedFunction.calculateSpeed(distance);
+                float distanceTarget  = getDistance(MathHelper.ToDegrees(motor.Angle), targetAngle, motor.LowerLimitDeg, motor.UpperLimitDeg);
+                float distanceInitial = getDistance(MathHelper.ToDegrees(motor.Angle), initialAngle, motor.LowerLimitDeg, motor.UpperLimitDeg);
                 Echo($"Current Angle: {MathHelper.ToDegrees(motor.Angle)}");
                 Echo($"Target Angle: {targetAngle}");
                 Echo($"Tolerance: {angleTolerance}");
-                Echo($"Distance: {distance}");
-                Echo($"Speed: {speed}");
-                if(!isWithinTolerance(distance, angleTolerance))
+                Echo($"Distance: {distanceTarget}");
+                if(!isWithinTolerance(distanceTarget, angleTolerance))
                 {
-                    motor.TargetVelocityRPM = speed;
+                    float speedTarget  = speedFunction.calculateSpeed(distanceTarget);
+                    float speedInitial = speedFunction.calculateSpeed(distanceInitial);
+                    motor.TargetVelocityRPM = Math.Abs(speedInitial) < Math.Abs(speedTarget) ? Math.Sign(speedTarget) * Math.Abs(speedInitial) : speedTarget;
+                    Echo($"Speed: {speedTarget}");
                 }
                 else
                 {
                     motor.TargetVelocityRPM = 0f;
                     Echo("Target reached!");
+                    initialAngle = float.NaN;
+                    Runtime.UpdateFrequency = UpdateFrequency.None;
                 }
             }
             catch (System.Exception e)
             {
                 Echo($"Error: {e.Message}");
+                Runtime.UpdateFrequency = UpdateFrequency.None;
             }
         }
 
         public void Save()
         {
-            //Storage = "-" + currentTarget.Angle;
-            return;
-            // This method is called when the program needs to save its state. Use
-            // this method to save your state to the Storage field or some other
-            // means. 
+            Storage = initialAngle.ToString();
         }
     }
 }
