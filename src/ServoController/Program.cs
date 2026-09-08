@@ -28,10 +28,58 @@ namespace SE_Scripts.ServoController
             float calculateSpeed(float distance);
         }
 
+        public class RASCFunction : ISpeedFunction
+        {
+            private float minSpeed = 0.1f;
+            private float maxSpeed = 5f;
+            private float k = 5f; //smoothing parameter
+            private float w = -0.75f; //Width bias: w in (-1 to 1).
+
+            private float amplitude = 0;
+            private const float period = MathHelper.Pi / 180f;
+            private float atan_k = 0;
+            
+            //https://www.geogebra.org/calculator/cwu88q2e
+            public RASCFunction(float minSpeed = 0.1f, float maxSpeed = 5f, float k = 5f, float w = -0.75f)
+            {
+                if(minSpeed < 0 || 30 < minSpeed) throw new ArgumentException("minSpeed must be in [0, 30]");
+                if(maxSpeed < 0 || 30 < maxSpeed) throw new ArgumentException("maxSpeed must be in [0, 30]");
+                if(k <= 0) throw new ArgumentException("k must be in (0, infinity)");
+                if(w <= -1 ||  1 <= w) throw new ArgumentException("w must be in (-1, 1)");
+
+                this.minSpeed = minSpeed;
+                this.maxSpeed = maxSpeed;
+                this.k = k;
+                this.w = w;
+
+                amplitude = (this.maxSpeed - this.minSpeed) / 2f;
+                atan_k = (float) Math.Atan(k);
+            }
+
+            public RASCFunction(MyIni ini) : this( 
+                ini.Get("SpeedFunction", "min_speed").ToSingle(0.1f), 
+                ini.Get("SpeedFunction", "max_speed").ToSingle(5f),
+                ini.Get("SpeedFunction", "k").ToSingle(5f),
+                ini.Get("SpeedFunction", "w").ToSingle(-0.75f)){}
+
+            private float f(float x)
+            {
+                float rawCos = (float)Math.Cos(x * period);
+                float numerator = (float)Math.Atan(k * ((rawCos + w) / (1f + w * rawCos)));
+                float smoothness_width_term = -1f * (numerator / atan_k);
+                return amplitude * smoothness_width_term + amplitude + minSpeed;
+            } 
+
+            public float calculateSpeed(float distance)
+            {
+                return distance >= 0 ? f(distance) : -1f * f(distance);
+            }
+        }
+
         public class LinearSpeedFunction : ISpeedFunction
         {
-            public float minSpeed = 0;
-            public float maxSpeed = float.MaxValue;
+            private float minSpeed = 0;
+            private float maxSpeed = float.MaxValue;
 
             private float slope = 0;
 
@@ -96,6 +144,9 @@ namespace SE_Scripts.ServoController
 
             switch (INI.Get("SpeedFunction", "name").ToString())
             {
+                case "rasc": // raised asymetric smooth cosine
+                    speedFunction = new RASCFunction(INI);
+                    break;
                 case "linear":
                     speedFunction = new LinearSpeedFunction(INI);
                     break;
@@ -103,7 +154,6 @@ namespace SE_Scripts.ServoController
                     throw new NotSupportedException("Speed function not supported");
             }
         }
-
 
         public float getDistance(float currentAngle, float targetAngle, float lowerLimit, float upperLimit)
         {

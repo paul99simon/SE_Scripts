@@ -1,6 +1,6 @@
 namespace SE_Scripts.ServoController.Tests;
 
-public class LinearAcceleration
+public class LinearSpeedFunctionTests
 {
     [Theory]
     [InlineData(0, 30, 0, 0,    "distance = 0 => minSpeed")]
