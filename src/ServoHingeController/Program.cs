@@ -12,6 +12,7 @@ namespace SE_Scripts.ServoHingeController
         private IMyMotorStator hinge;
         private float angleTolerance;
 
+        private float targetAngle = float.NaN;
         private float initialAngle = float.NaN;
 
         private ISpeedFunction speedFunction; //calculates speed as a function of distance
@@ -97,10 +98,6 @@ namespace SE_Scripts.ServoHingeController
         }
 
 
-        public Program()
-        {
-            float.TryParse(Storage, out initialAngle);
-        }
 
         private MyIni parseINI(string customData)
         {
@@ -169,6 +166,24 @@ namespace SE_Scripts.ServoHingeController
         {
             return Math.Abs(difference) <= tolerance;
         }
+
+        public Program()
+        {
+            //Storage = "";
+            Echo($"Storage : {Storage}");
+            if(Storage != "")
+            {
+                float[] storage = Array.ConvertAll(Storage.Split(','), float.Parse);
+                initialAngle = storage[0];
+                targetAngle = storage[1];
+                Storage = "";
+            }
+        }
+
+        public void Save()
+        {
+            Storage = initialAngle.ToString() + "," + targetAngle.ToString();
+        }
         
         public void Main(string argument, UpdateType updateSource)
         {
@@ -177,11 +192,14 @@ namespace SE_Scripts.ServoHingeController
             {
                 MyIni INI = parseINI(Me.CustomData);
                 loadINI(INI);
+                if(float.IsNaN(targetAngle))
+                {
+                    targetAngle = parseArgument(argument);
+                }
                 if(float.IsNaN(initialAngle))
                 {
                     initialAngle = MathHelper.ToDegrees(hinge.Angle); 
                 }
-                float targetAngle = parseArgument(Me.TerminalRunArgument);
                 float distanceTarget  = getDistance(MathHelper.ToDegrees(hinge.Angle), targetAngle, hinge.LowerLimitDeg, hinge.UpperLimitDeg);
                 float distanceInitial = getDistance(MathHelper.ToDegrees(hinge.Angle), initialAngle, hinge.LowerLimitDeg, hinge.UpperLimitDeg);
                 Echo($"Current Angle: {MathHelper.ToDegrees(hinge.Angle)}");
@@ -199,6 +217,7 @@ namespace SE_Scripts.ServoHingeController
                 {
                     hinge.TargetVelocityRPM = 0f;
                     Echo("Target reached!");
+                    targetAngle = float.NaN;
                     initialAngle = float.NaN;
                     Runtime.UpdateFrequency = UpdateFrequency.None;
                 }
@@ -210,9 +229,5 @@ namespace SE_Scripts.ServoHingeController
             }
         }
 
-        public void Save()
-        {
-            Storage = initialAngle.ToString();
-        }
     }
 }

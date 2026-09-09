@@ -12,6 +12,7 @@ namespace SE_Scripts.ServoRotorController
         private IMyMotorStator motor;
         private float angleTolerance;
 
+        private float targetAngle = float.NaN;                   
         private float initialAngle = float.NaN;
 
         private ISpeedFunction speedFunction; //calculates speed as a function of distance
@@ -97,10 +98,6 @@ namespace SE_Scripts.ServoRotorController
         }
 
 
-        public Program()
-        {
-            float.TryParse(Storage, out initialAngle);
-        }
 
         private MyIni parseINI(string customData)
         {
@@ -187,6 +184,24 @@ namespace SE_Scripts.ServoRotorController
         {
             return Math.Abs(difference) <= tolerance;
         }
+
+        public Program()
+        {
+            //Storage = "";
+            Echo($"Storage : {Storage}");
+            if(Storage != "")
+            {
+                float[] storage = Array.ConvertAll(Storage.Split(','), float.Parse);
+                initialAngle = storage[0];
+                targetAngle = storage[1];
+                Storage = "";
+            }
+        }
+
+        public void Save()
+        {
+            Storage = initialAngle.ToString() + "," + targetAngle.ToString();
+        }
         
         public void Main(string argument, UpdateType updateSource)
         {
@@ -195,11 +210,14 @@ namespace SE_Scripts.ServoRotorController
             {
                 MyIni INI = parseINI(Me.CustomData);
                 loadINI(INI);
+                if(float.IsNaN(targetAngle))
+                {
+                    targetAngle = parseArgument(argument);
+                }
                 if(float.IsNaN(initialAngle))
                 {
                     initialAngle = MathHelper.ToDegrees(motor.Angle); 
                 }
-                float targetAngle = parseArgument(Me.TerminalRunArgument);
                 float distanceTarget  = getDistance(MathHelper.ToDegrees(motor.Angle), targetAngle, motor.LowerLimitDeg, motor.UpperLimitDeg);
                 float distanceInitial = getDistance(MathHelper.ToDegrees(motor.Angle), initialAngle, motor.LowerLimitDeg, motor.UpperLimitDeg);
                 Echo($"Current Angle: {MathHelper.ToDegrees(motor.Angle)}");
@@ -218,6 +236,7 @@ namespace SE_Scripts.ServoRotorController
                     motor.TargetVelocityRPM = 0f;
                     Echo("Target reached!");
                     initialAngle = float.NaN;
+                    targetAngle = float.NaN;
                     Runtime.UpdateFrequency = UpdateFrequency.None;
                 }
             }
@@ -228,9 +247,5 @@ namespace SE_Scripts.ServoRotorController
             }
         }
 
-        public void Save()
-        {
-            Storage = initialAngle.ToString();
-        }
     }
 }

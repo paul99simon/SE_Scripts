@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/FANUCController/FANUCController.csproj" />
     <Project Path="src/ServoHingeController/ServoHingeController.csproj" />
     <Project Path="src/ServoRotorController/ServoRotorController.csproj" />
   </Folder>
